@@ -182,6 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private var selectedTextColor = NSColor(red: 0.13, green: 0.11, blue: 0.08, alpha: 1)
     private var usesAutomaticTextColor = true
     private var colorEditMode: ColorEditMode?
+    private var isPreparingColorPanel = false
     private var tabButtons: [NSButton] = []
     private var tabWidthConstraints: [NSLayoutConstraint] = []
     private var hoverTimer: Timer?
@@ -783,25 +784,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     @objc private func colorText() {
         colorEditMode = .text
+        isPreparingColorPanel = true
         let panel = NSColorPanel.shared
         panel.setTarget(self)
         panel.setAction(#selector(applyPanelColor(_:)))
         panel.color = selectedTextColor
         panel.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.isPreparingColorPanel = false
+        }
         showStatus("글자색")
     }
 
     @objc private func colorPaper() {
         colorEditMode = .paper
+        isPreparingColorPanel = true
         let panel = NSColorPanel.shared
         panel.setTarget(self)
         panel.setAction(#selector(applyPanelColor(_:)))
         panel.color = paperBackgroundColor(for: selectedIndex)
         panel.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.isPreparingColorPanel = false
+        }
         showStatus("바탕색")
     }
 
     @objc private func applyPanelColor(_ sender: NSColorPanel) {
+        guard !isPreparingColorPanel else { return }
         switch colorEditMode {
         case .text:
             applySelectedColor(sender.color)
@@ -814,7 +824,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     private func applyPaperColor(_ selectedColor: NSColor) {
         let color = selectedColor.usingColorSpace(.sRGB) ?? selectedColor
-        store.updateBackground(index: selectedIndex, hex: hexString(for: color))
+        let hex = hexString(for: color)
+        guard !MemoStore.isAccidentalWhite(hex) else {
+            showStatus("흰색 제외")
+            return
+        }
+        store.updateBackground(index: selectedIndex, hex: hex)
         updatePaperColor(animated: true)
         refreshSelectedTab()
     }

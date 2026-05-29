@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.9
+
+- Ignored color panel setup events so opening the paper color picker cannot save white.
+- Blocked accidental pure-white paper saves.
+
 ## 1.2.8
 
 - Isolated the shared macOS color panel modes for text and paper colors.
