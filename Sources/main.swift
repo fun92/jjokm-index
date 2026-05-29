@@ -4,6 +4,7 @@ struct Memo: Codable {
     var title: String
     var text: String
     var fontSize: Double?
+    var backgroundHex: String?
 
     var effectiveFontSize: CGFloat {
         CGFloat(fontSize ?? 24)
@@ -59,9 +60,9 @@ final class MemoStore {
             memos = decoded
         } else {
             memos = [
-                Memo(title: "메모", text: "모니터 오른쪽에 쪼꼼 숨어 있다가\n\n필요할 때 톡 열리는 쪼꼼 인덱스입니다.", fontSize: 16),
-                Memo(title: "할 일", text: "", fontSize: 16),
-                Memo(title: "링크", text: "", fontSize: 16)
+                Memo(title: "메모", text: "모니터 오른쪽에 쪼꼼 숨어 있다가\n\n필요할 때 톡 열리는 쪼꼼 인덱스입니다.", fontSize: 16, backgroundHex: nil),
+                Memo(title: "할 일", text: "", fontSize: 16, backgroundHex: nil),
+                Memo(title: "링크", text: "", fontSize: 16, backgroundHex: nil)
             ]
         }
 
@@ -89,7 +90,7 @@ final class MemoStore {
     }
 
     func addMemo() -> Int {
-        memos.append(Memo(title: "새 메모", text: "", fontSize: 16))
+        memos.append(Memo(title: "새 메모", text: "", fontSize: 16, backgroundHex: nil))
         save()
         return memos.count - 1
     }
@@ -100,10 +101,16 @@ final class MemoStore {
         save()
     }
 
+    func updateBackground(index: Int, hex: String) {
+        guard memos.indices.contains(index) else { return }
+        memos[index].backgroundHex = hex
+        save()
+    }
+
     func deleteMemo(index: Int) -> Int {
         guard memos.indices.contains(index) else { return 0 }
         if memos.count == 1 {
-            memos[0] = Memo(title: "메모", text: "", fontSize: 16)
+            memos[0] = Memo(title: "메모", text: "", fontSize: 16, backgroundHex: nil)
             save()
             return 0
         }
@@ -278,7 +285,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         titleField.textColor = NSColor(red: 0.13, green: 0.11, blue: 0.08, alpha: 1)
         titleField.target = self
         titleField.action = #selector(titleChanged)
-        paper.addSubview(titleField)
+        titleField.isHidden = true
 
         let toolbarDock = NSView(frame: NSRect(x: 28, y: 14, width: openWidth - 56, height: 40))
         toolbarDock.wantsLayer = true
@@ -293,7 +300,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             ("I", #selector(italic), 32),
             ("U", #selector(underline), 32),
             ("•", #selector(bullet), 32),
-            ("🎨", #selector(colorText), 34),
+            ("🎨", #selector(colorPaper), 34),
             ("Aa", #selector(toggleSizeSlider), 38)
         ]
         var toolbarX: CGFloat = 42
@@ -331,16 +338,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         statusLabel.font = .systemFont(ofSize: 10, weight: .semibold)
         statusLabel.textColor = NSColor.black.withAlphaComponent(0.45)
         statusLabel.frame = NSRect(x: openWidth - 92, y: 25, width: 42, height: 16)
+        statusLabel.isHidden = true
         paper.addSubview(statusLabel)
 
-        versionLabel = NSTextField(labelWithString: "v1.2")
+        versionLabel = NSTextField(labelWithString: "쪼꼼 인덱스 v1.2")
         versionLabel.alignment = .right
-        versionLabel.font = .monospacedDigitSystemFont(ofSize: 10, weight: .bold)
+        versionLabel.font = .systemFont(ofSize: 9, weight: .bold)
         versionLabel.textColor = NSColor.black.withAlphaComponent(0.45)
-        versionLabel.frame = NSRect(x: openWidth - 42, y: 25, width: 32, height: 16)
+        versionLabel.frame = NSRect(x: openWidth - 132, y: 25, width: 120, height: 16)
         paper.addSubview(versionLabel)
 
-        textScroll = NSScrollView(frame: NSRect(x: 36, y: 62, width: openWidth - 72, height: panelHeight - 166))
+        textScroll = NSScrollView(frame: NSRect(x: 36, y: 62, width: openWidth - 72, height: panelHeight - 134))
         textScroll.drawsBackground = false
         textScroll.hasVerticalScroller = true
         textScroll.borderType = .noBorder
@@ -357,7 +365,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         textScroll.documentView = textView
         paper.addSubview(textScroll)
 
-        tabStack = NSStackView(frame: NSRect(x: 36, y: panelHeight - 96, width: openWidth - 72, height: 26))
+        tabStack = NSStackView(frame: NSRect(x: 36, y: panelHeight - 66, width: openWidth - 72, height: 26))
         tabStack.orientation = .horizontal
         tabStack.spacing = 5
         tabStack.distribution = .fill
@@ -398,6 +406,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         titleField.stringValue = store.memos[index].title
         textView.string = store.memos[index].text
         applyMemoFontSize(store.memos[index].effectiveFontSize)
+        updatePaperColor(animated: false)
         refreshSelectedTab()
     }
 
@@ -583,7 +592,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             bubbleButton.isHidden = true
             paper.frame.origin = .zero
             tabStack.frame.origin.x = 36
-            tabStack.frame.origin.y = panelHeight - 96
+            tabStack.frame.origin.y = panelHeight - 66
         } else {
             paper.isHidden = true
             tabStack.isHidden = true
@@ -747,6 +756,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         panel.color = selectedTextColor
         panel.makeKeyAndOrderFront(nil)
         showStatus("색 선택")
+    }
+
+    @objc private func colorPaper() {
+        let panel = NSColorPanel.shared
+        panel.setTarget(self)
+        panel.setAction(#selector(applyPaperColor(_:)))
+        panel.color = paperBackgroundColor(for: selectedIndex)
+        panel.makeKeyAndOrderFront(nil)
+        showStatus("바탕색")
+    }
+
+    @objc private func applyPaperColor(_ sender: NSColorPanel) {
+        let color = sender.color.usingColorSpace(.sRGB) ?? sender.color
+        store.updateBackground(index: selectedIndex, hex: hexString(for: color))
+        updatePaperColor(animated: true)
+        refreshSelectedTab()
     }
 
     @objc private func applySelectedColor(_ sender: NSColorPanel) {
@@ -920,23 +945,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     }
 
     private func tabColor(index: Int) -> NSColor {
+        paperBackgroundColor(for: index).withAlphaComponent(0.55)
+    }
+
+    private func selectedTabColor(index: Int) -> NSColor {
+        paperBackgroundColor(for: index).withAlphaComponent(0.88)
+    }
+
+    private func updatePaperColor(animated: Bool) {
+        let color = paperBackgroundColor(for: selectedIndex).withAlphaComponent(0.96)
+        let apply = { [weak self] in
+            self?.paper.layer?.backgroundColor = color.cgColor
+        }
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.12
+                apply()
+            }
+        } else {
+            apply()
+        }
+    }
+
+    private func paperBackgroundColor(for index: Int) -> NSColor {
+        if
+            store.memos.indices.contains(index),
+            let hex = store.memos[index].backgroundHex,
+            let color = color(fromHex: hex)
+        {
+            return color
+        }
+
         let colors = [
-            NSColor(red: 1.0, green: 0.86, blue: 0.92, alpha: 0.82),
-            NSColor(red: 0.84, green: 0.93, blue: 1.0, alpha: 0.82),
-            NSColor(red: 0.84, green: 1.0, blue: 0.90, alpha: 0.82),
-            NSColor(red: 1.0, green: 0.90, blue: 0.72, alpha: 0.82)
+            NSColor(red: 1.0, green: 0.95, blue: 0.47, alpha: 1.0),
+            NSColor(red: 0.78, green: 0.90, blue: 1.0, alpha: 1.0),
+            NSColor(red: 0.78, green: 0.96, blue: 0.82, alpha: 1.0),
+            NSColor(red: 1.0, green: 0.88, blue: 0.68, alpha: 1.0)
         ]
         return colors[index % colors.count]
     }
 
-    private func selectedTabColor(index: Int) -> NSColor {
-        let colors = [
-            NSColor(red: 1.0, green: 0.74, blue: 0.84, alpha: 0.96),
-            NSColor(red: 0.72, green: 0.88, blue: 1.0, alpha: 0.96),
-            NSColor(red: 0.72, green: 0.96, blue: 0.80, alpha: 0.96),
-            NSColor(red: 1.0, green: 0.82, blue: 0.56, alpha: 0.96)
-        ]
-        return colors[index % colors.count]
+    private func hexString(for color: NSColor) -> String {
+        let rgb = color.usingColorSpace(.sRGB) ?? color
+        let red = Int(round(rgb.redComponent * 255))
+        let green = Int(round(rgb.greenComponent * 255))
+        let blue = Int(round(rgb.blueComponent * 255))
+        return String(format: "#%02X%02X%02X", red, green, blue)
+    }
+
+    private func color(fromHex hex: String) -> NSColor? {
+        let cleaned = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        guard cleaned.count == 6, let value = Int(cleaned, radix: 16) else { return nil }
+        let red = CGFloat((value >> 16) & 0xFF) / 255
+        let green = CGFloat((value >> 8) & 0xFF) / 255
+        let blue = CGFloat(value & 0xFF) / 255
+        return NSColor(red: red, green: green, blue: blue, alpha: 1)
     }
 }
 

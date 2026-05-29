@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.4
+
+- Removed the large title from the panel to give notes more room.
+- Added per-memo background colors with palette customization.
+- Moved the app/version label into the bottom toolbar.
+
 ## 1.2.3
 
 - Matched the heart badge circle to the mint icon accent.
