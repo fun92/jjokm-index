@@ -234,6 +234,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         bubbleButton.layer?.shadowOpacity = 0.20
         bubbleButton.layer?.shadowRadius = 10
         bubbleButton.layer?.shadowOffset = NSSize(width: -2, height: -2)
+        bubbleButton.autoresizingMask = [.minYMargin]
         root.addSubview(bubbleButton)
 
         paper = NSView(frame: NSRect(x: 0, y: 0, width: openWidth, height: panelHeight))
@@ -524,6 +525,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let anchorTop = min(max(panel.frame.maxY, screen.minY + bubbleSize + 10), screen.maxY - 10)
         let desiredY = min(max(anchorTop - height, screen.minY + 10), screen.maxY - height - 10)
         let newFrame = NSRect(x: windowX(width: width, screen: screen), y: desiredY, width: width, height: height)
+
+        if animated && !isOpen {
+            prepareAnchoredBubbleForClosing()
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.22
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                panel.animator().setFrame(newFrame, display: true)
+                bubbleButton.animator().frame = bubbleFrame(for: bubbleSize)
+            } completionHandler: { [weak self] in
+                guard let self else { return }
+                self.root.frame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                self.layoutContent(for: width, height: height)
+                self.updateBubbleVisibility(animated: false)
+            }
+            return
+        }
+
         root.frame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
         layoutContent(for: width, height: height)
         if animated {
@@ -551,8 +569,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             paper.isHidden = true
             tabStack.isHidden = true
             bubbleButton.isHidden = false
-            bubbleButton.frame = NSRect(x: 8, y: 0, width: bubbleSize, height: bubbleSize)
+            bubbleButton.frame = bubbleFrame(for: height)
         }
+    }
+
+    private func prepareAnchoredBubbleForClosing() {
+        paper.isHidden = true
+        tabStack.isHidden = true
+        bubbleButton.isHidden = false
+        bubbleButton.frame = bubbleFrame(for: panel.frame.height)
+    }
+
+    private func bubbleFrame(for height: CGFloat) -> NSRect {
+        NSRect(x: 8, y: max(0, height - bubbleSize), width: bubbleSize, height: bubbleSize)
     }
 
     private func startHoverReveal() {
