@@ -521,8 +521,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private func resize(to width: CGFloat, animated: Bool) {
         let screen = panel.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let height = isOpen ? panelHeight : bubbleSize
-        let centerY = panel.frame.midY
-        let desiredY = min(max(centerY - height / 2, screen.minY + 10), screen.maxY - height - 10)
+        let anchorTop = min(max(panel.frame.maxY, screen.minY + bubbleSize + 10), screen.maxY - 10)
+        let desiredY = min(max(anchorTop - height, screen.minY + 10), screen.maxY - height - 10)
         let newFrame = NSRect(x: windowX(width: width, screen: screen), y: desiredY, width: width, height: height)
         root.frame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
         layoutContent(for: width, height: height)
