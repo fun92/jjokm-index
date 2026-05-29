@@ -144,6 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private var selectedTextColor = NSColor(red: 0.13, green: 0.11, blue: 0.08, alpha: 1)
     private var tabButtons: [NSButton] = []
     private var tabWidthConstraints: [NSLayoutConstraint] = []
+    private var hoverTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -153,6 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         close(animated: false)
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        startHoverReveal()
     }
 
     private func buildWindow() {
@@ -457,6 +459,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         } else {
             panel.setFrame(newFrame, display: true)
         }
+        updateBubbleVisibility(animated: false)
     }
 
     private func layoutContent(for width: CGFloat, height: CGFloat) {
@@ -472,6 +475,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             tabStack.isHidden = true
             bubbleButton.isHidden = false
             bubbleButton.frame = NSRect(x: 8, y: 0, width: bubbleSize, height: bubbleSize)
+        }
+    }
+
+    private func startHoverReveal() {
+        hoverTimer?.invalidate()
+        hoverTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+            self?.updateBubbleVisibility(animated: true)
+        }
+        RunLoop.main.add(hoverTimer!, forMode: .common)
+        updateBubbleVisibility(animated: false)
+    }
+
+    private func updateBubbleVisibility(animated: Bool) {
+        guard !isOpen else {
+            root.alphaValue = 1
+            return
+        }
+
+        let mouse = NSEvent.mouseLocation
+        let frame = panel.frame
+        let screen = panel.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let nearRightEdge = mouse.x >= screen.maxX - 90
+        let nearBubbleY = mouse.y >= frame.minY - 80 && mouse.y <= frame.maxY + 80
+        let targetAlpha: CGFloat = nearRightEdge && nearBubbleY ? 1.0 : 0.16
+
+        guard abs(root.alphaValue - targetAlpha) > 0.02 else { return }
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.16
+                root.animator().alphaValue = targetAlpha
+            }
+        } else {
+            root.alphaValue = targetAlpha
         }
     }
 
