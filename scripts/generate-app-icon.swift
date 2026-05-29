@@ -113,9 +113,9 @@ func makeIcon(size: CGFloat) -> NSImage {
     NSShadow().with {
         $0.shadowOffset = NSSize(width: 0, height: -r(10))
         $0.shadowBlurRadius = r(22)
-        $0.shadowColor = color(58, 106, 108, 0.22)
+        $0.shadowColor = color(52, 111, 112, 0.22)
     }.set()
-    color(174, 226, 224).setFill()
+    color(166, 217, 218).setFill()
     tab.fill()
     NSShadow().set()
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.3
+
+- Matched the heart badge circle to the mint icon accent.
+
 ## 1.2.2
 
 - Refined the app icon colors with a mint tab and yellow heart.
