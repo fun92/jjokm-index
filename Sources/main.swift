@@ -47,7 +47,7 @@ final class MemoStore {
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let folder = appSupport.appendingPathComponent("BeKkomIndex", isDirectory: true)
+        let folder = appSupport.appendingPathComponent("JjokmIndex", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         url = folder.appendingPathComponent("memos.json")
 
@@ -59,7 +59,7 @@ final class MemoStore {
             memos = decoded
         } else {
             memos = [
-                Memo(title: "메모", text: "모니터 오른쪽에 착! 하고 붙은\n\n빼꼼 인덱스입니다.", fontSize: 16),
+                Memo(title: "메모", text: "모니터 오른쪽에 쪼꼼 숨어 있다가\n\n필요할 때 톡 열리는 쪼꼼 인덱스입니다.", fontSize: 16),
                 Memo(title: "할 일", text: "", fontSize: 16),
                 Memo(title: "링크", text: "", fontSize: 16)
             ]

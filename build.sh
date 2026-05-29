@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="빼꼼 인덱스"
+APP_NAME="쪼꼼 인덱스"
 VERSION="1.1.0"
 APP="$ROOT/dist/$APP_NAME.app"
 MACOS="$APP/Contents/MacOS"
@@ -17,7 +17,7 @@ SWIFT_MODULE_CACHE_PATH="$CACHE/swift" \
 xcrun swiftc "$ROOT/Sources/main.swift" \
   -framework Cocoa \
   -module-cache-path "$CACHE/swift" \
-  -o "$MACOS/BeKkomIndex"
+  -o "$MACOS/JjokmIndex"
 
 cp "$ROOT/Info.plist" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist" >/dev/null
