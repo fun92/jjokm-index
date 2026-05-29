@@ -129,8 +129,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private var selectedIndex = 0
     private var isOpen = false
     private var justLaunched = true
+    private var side = UserDefaults.standard.string(forKey: "edgeSide") == "left" ? "left" : "right"
+    private var isPinned = UserDefaults.standard.bool(forKey: "memoPinned")
 
     private var statusItem: NSStatusItem!
+    private var loginItemMenuItem: NSMenuItem!
+    private var sideMenuItem: NSMenuItem!
+    private var pinMenuItem: NSMenuItem!
     private var panel: EdgePanel!
     private var root: NSView!
     private var paper: NSView!
@@ -172,9 +177,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "쪼꼼 열기", action: #selector(openFromMenu), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "접기", action: #selector(closeFromMenu), keyEquivalent: ""))
+        pinMenuItem = NSMenuItem(title: "", action: #selector(togglePin), keyEquivalent: "")
+        menu.addItem(pinMenuItem)
+        sideMenuItem = NSMenuItem(title: "", action: #selector(toggleSide), keyEquivalent: "")
+        menu.addItem(sideMenuItem)
+        loginItemMenuItem = NSMenuItem(title: "", action: #selector(toggleLoginItem), keyEquivalent: "")
+        menu.addItem(loginItemMenuItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "종료", action: #selector(quitApp), keyEquivalent: "q"))
         statusItem.menu = menu
+        updateStatusMenuItems()
     }
 
     private func buildWindow() {
@@ -182,7 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let savedY = UserDefaults.standard.object(forKey: "bubbleY") as? CGFloat
         let initialY = savedY ?? (screen.midY - bubbleSize / 2)
         let frame = NSRect(
-            x: screen.maxX - closedWidth,
+            x: windowX(width: closedWidth, screen: screen),
             y: min(max(initialY, screen.minY + 10), screen.maxY - bubbleSize - 10),
             width: closedWidth,
             height: bubbleSize
@@ -197,9 +209,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = .floating
+        panel.level = isPinned ? .statusBar : .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
+        panel.hidesOnDeactivate = false
 
         root = NSView(frame: NSRect(origin: .zero, size: frame.size))
         root.wantsLayer = true
@@ -434,6 +447,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         close(animated: true)
     }
 
+    @objc private func togglePin() {
+        isPinned.toggle()
+        UserDefaults.standard.set(isPinned, forKey: "memoPinned")
+        panel.level = isPinned ? .statusBar : .floating
+        if isPinned {
+            openFromMenu()
+        }
+        updateStatusMenuItems()
+    }
+
+    @objc private func toggleSide() {
+        side = side == "right" ? "left" : "right"
+        UserDefaults.standard.set(side, forKey: "edgeSide")
+        resize(to: isOpen ? openWidth : closedWidth, animated: true)
+        updateStatusMenuItems()
+    }
+
+    @objc private func toggleLoginItem() {
+        setLoginItem(enabled: !isLoginItemEnabled())
+        updateStatusMenuItems()
+    }
+
     @objc private func addMemo() {
         let index = store.addMemo()
         renderTabs()
@@ -481,7 +516,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let height = isOpen ? panelHeight : bubbleSize
         let centerY = panel.frame.midY
         let desiredY = min(max(centerY - height / 2, screen.minY + 10), screen.maxY - height - 10)
-        let newFrame = NSRect(x: screen.maxX - width - 8, y: desiredY, width: width, height: height)
+        let newFrame = NSRect(x: windowX(width: width, screen: screen), y: desiredY, width: width, height: height)
         root.frame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
         layoutContent(for: width, height: height)
         if animated {
@@ -535,9 +570,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let mouse = NSEvent.mouseLocation
         let frame = panel.frame
         let screen = panel.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        let nearRightEdge = mouse.x >= screen.maxX - 90
+        let nearEdge = side == "right" ? mouse.x >= screen.maxX - 90 : mouse.x <= screen.minX + 90
         let nearBubbleY = mouse.y >= frame.minY - 80 && mouse.y <= frame.maxY + 80
-        let targetAlpha: CGFloat = nearRightEdge && nearBubbleY ? 1.0 : 0.22
+        let targetAlpha: CGFloat = nearEdge && nearBubbleY ? 1.0 : 0.22
 
         guard abs(root.alphaValue - targetAlpha) > 0.02 else { return }
 
@@ -558,6 +593,69 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         frame.origin.y = min(max(frame.origin.y + deltaY, screen.minY + 10), screen.maxY - frame.height - 10)
         panel.setFrame(frame, display: true)
         UserDefaults.standard.set(frame.origin.y, forKey: "bubbleY")
+    }
+
+    private func windowX(width: CGFloat, screen: NSRect) -> CGFloat {
+        side == "right" ? screen.maxX - width - 8 : screen.minX + 8
+    }
+
+    private func updateStatusMenuItems() {
+        pinMenuItem?.title = isPinned ? "메모 고정 끄기" : "메모 고정 켜기"
+        sideMenuItem?.title = side == "right" ? "왼쪽으로 이동" : "오른쪽으로 이동"
+        loginItemMenuItem?.title = isLoginItemEnabled() ? "로그인 시 자동 열기 끄기" : "로그인 시 자동 열기 켜기"
+    }
+
+    private func loginPlistURL() -> URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents/app.jjokkom.index.login.plist")
+    }
+
+    private func isLoginItemEnabled() -> Bool {
+        FileManager.default.fileExists(atPath: loginPlistURL().path)
+    }
+
+    private func setLoginItem(enabled: Bool) {
+        let plist = loginPlistURL()
+        if enabled {
+            let bundlePath = Bundle.main.bundlePath
+            let contents = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>Label</key>
+              <string>app.jjokkom.index.login</string>
+              <key>ProgramArguments</key>
+              <array>
+                <string>/usr/bin/open</string>
+                <string>\(bundlePath)</string>
+              </array>
+              <key>RunAtLoad</key>
+              <true/>
+            </dict>
+            </plist>
+            """
+            try? FileManager.default.createDirectory(at: plist.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? contents.write(to: plist, atomically: true, encoding: .utf8)
+            _ = shellLaunchctl(["unload", plist.path])
+            _ = shellLaunchctl(["load", plist.path])
+        } else {
+            _ = shellLaunchctl(["unload", plist.path])
+            try? FileManager.default.removeItem(at: plist)
+        }
+    }
+
+    private func shellLaunchctl(_ arguments: [String]) -> Bool {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        process.arguments = arguments
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
+        }
     }
 
     @objc private func bold() {
