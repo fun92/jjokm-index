@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.10
+
+- Replaced the paper color picker with a fixed color-swatch menu to prevent accidental resets.
+
 ## 1.2.9
 
 - Ignored color panel setup events so opening the paper color picker cannot save white.

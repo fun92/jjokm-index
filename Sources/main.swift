@@ -327,7 +327,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             ("U", #selector(underline), 30),
             ("•", #selector(bullet), 30),
             ("A", #selector(colorText), 30),
-            ("🎨", #selector(colorPaper), 32),
+            ("🎨", #selector(colorPaper(_:)), 32),
             ("Aa", #selector(toggleSizeSlider), 34)
         ]
         var toolbarX: CGFloat = 42
@@ -796,17 +796,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         showStatus("글자색")
     }
 
-    @objc private func colorPaper() {
-        colorEditMode = .paper
-        isPreparingColorPanel = true
-        let panel = NSColorPanel.shared
-        panel.setTarget(self)
-        panel.setAction(#selector(applyPanelColor(_:)))
-        panel.color = paperBackgroundColor(for: selectedIndex)
-        panel.makeKeyAndOrderFront(nil)
-        DispatchQueue.main.async { [weak self] in
-            self?.isPreparingColorPanel = false
+    @objc private func colorPaper(_ sender: NSButton) {
+        let menu = NSMenu()
+        for option in paperPaletteOptions() {
+            let item = NSMenuItem(title: option.title, action: #selector(applyPaperColorFromMenu(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = option.hex
+            item.image = colorSwatch(option.color)
+            if store.memos[selectedIndex].backgroundHex?.uppercased() == option.hex {
+                item.state = .on
+            }
+            menu.addItem(item)
         }
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.maxY + 4), in: sender)
         showStatus("바탕색")
     }
 
@@ -832,6 +834,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         store.updateBackground(index: selectedIndex, hex: hex)
         updatePaperColor(animated: true)
         refreshSelectedTab()
+    }
+
+    @objc private func applyPaperColorFromMenu(_ sender: NSMenuItem) {
+        guard let hex = sender.representedObject as? String else { return }
+        store.updateBackground(index: selectedIndex, hex: hex)
+        updatePaperColor(animated: true)
+        refreshSelectedTab()
+        showStatus("바탕색")
     }
 
     private func applySelectedColor(_ selectedColor: NSColor) {
@@ -1016,6 +1026,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     private func selectedTabColor(index: Int) -> NSColor {
         paperBackgroundColor(for: index).withAlphaComponent(0.88)
+    }
+
+    private func paperPaletteOptions() -> [(title: String, hex: String, color: NSColor)] {
+        [
+            ("노랑", "#FFF279", color(fromHex: "#FFF279")!),
+            ("파랑", "#C7E6FF", color(fromHex: "#C7E6FF")!),
+            ("초록", "#C7F5D1", color(fromHex: "#C7F5D1")!),
+            ("살구", "#FFE0AD", color(fromHex: "#FFE0AD")!),
+            ("보라", "#E4D7FF", color(fromHex: "#E4D7FF")!),
+            ("회색", "#EDEBE4", color(fromHex: "#EDEBE4")!)
+        ]
+    }
+
+    private func colorSwatch(_ color: NSColor) -> NSImage {
+        let size = NSSize(width: 14, height: 14)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        let rect = NSRect(origin: .zero, size: size)
+        let path = NSBezierPath(roundedRect: rect.insetBy(dx: 1, dy: 1), xRadius: 4, yRadius: 4)
+        color.setFill()
+        path.fill()
+        NSColor.black.withAlphaComponent(0.16).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+        image.unlockFocus()
+        image.isTemplate = false
+        return image
     }
 
     private func updatePaperColor(animated: Bool) {
