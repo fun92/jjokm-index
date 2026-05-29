@@ -128,7 +128,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private let store = MemoStore()
     private var selectedIndex = 0
     private var isOpen = false
+    private var justLaunched = true
 
+    private var statusItem: NSStatusItem!
     private var panel: EdgePanel!
     private var root: NSView!
     private var paper: NSView!
@@ -149,12 +151,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         buildWindow()
+        buildStatusItem()
         renderTabs()
         selectMemo(0)
         close(animated: false)
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         startHoverReveal()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+            self?.justLaunched = false
+        }
+    }
+
+    private func buildStatusItem() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem.button?.title = "💛"
+        statusItem.button?.target = self
+        statusItem.button?.action = #selector(statusItemClicked)
+
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "쪼꼼 열기", action: #selector(openFromMenu), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "접기", action: #selector(closeFromMenu), keyEquivalent: ""))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "종료", action: #selector(quitApp), keyEquivalent: "q"))
+        statusItem.menu = menu
     }
 
     private func buildWindow() {
@@ -400,6 +420,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         isOpen ? close(animated: true) : open()
     }
 
+    @objc private func statusItemClicked() {
+        openFromMenu()
+    }
+
+    @objc private func openFromMenu() {
+        open()
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func closeFromMenu() {
+        close(animated: true)
+    }
+
     @objc private func addMemo() {
         let index = store.addMemo()
         renderTabs()
@@ -493,12 +527,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             return
         }
 
+        guard !justLaunched else {
+            root.alphaValue = 1
+            return
+        }
+
         let mouse = NSEvent.mouseLocation
         let frame = panel.frame
         let screen = panel.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let nearRightEdge = mouse.x >= screen.maxX - 90
         let nearBubbleY = mouse.y >= frame.minY - 80 && mouse.y <= frame.maxY + 80
-        let targetAlpha: CGFloat = nearRightEdge && nearBubbleY ? 1.0 : 0.16
+        let targetAlpha: CGFloat = nearRightEdge && nearBubbleY ? 1.0 : 0.22
 
         guard abs(root.alphaValue - targetAlpha) > 0.02 else { return }
 
