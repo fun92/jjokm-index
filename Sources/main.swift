@@ -332,7 +332,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         statusLabel.frame = NSRect(x: openWidth - 92, y: 25, width: 42, height: 16)
         paper.addSubview(statusLabel)
 
-        versionLabel = NSTextField(labelWithString: "v1.1")
+        versionLabel = NSTextField(labelWithString: "v1.2")
         versionLabel.alignment = .right
         versionLabel.font = .monospacedDigitSystemFont(ofSize: 10, weight: .bold)
         versionLabel.textColor = NSColor.black.withAlphaComponent(0.45)
@@ -516,7 +516,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     private func close(animated: Bool) {
         isOpen = false
+        if animated {
+            closeWithoutMovingLauncher()
+            return
+        }
         resize(to: closedWidth, animated: animated)
+    }
+
+    private func closeWithoutMovingLauncher() {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.14
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            paper.animator().alphaValue = 0
+            tabStack.animator().alphaValue = 0
+        } completionHandler: { [weak self] in
+            guard let self else { return }
+            self.resize(to: self.closedWidth, animated: false)
+            self.paper.alphaValue = 1
+            self.tabStack.alphaValue = 1
+        }
     }
 
     private func resize(to width: CGFloat, animated: Bool) {
