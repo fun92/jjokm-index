@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- Added a custom macOS app icon.
+
 ## 1.1.0
 
 - Added `Aa` font-size slider.

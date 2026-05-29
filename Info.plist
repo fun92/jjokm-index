@@ -10,10 +10,12 @@
   <string>쪼꼼 인덱스</string>
   <key>CFBundleDisplayName</key>
   <string>쪼꼼 인덱스</string>
+  <key>CFBundleIconFile</key>
+  <string>JjokkomIndex</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.2.0</string>
+  <string>1.2.1</string>
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>LSMinimumSystemVersion</key>
