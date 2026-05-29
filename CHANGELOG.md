@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.7
+
+- Fixed new memos sometimes appearing with a white paper background.
+- Persisted default paper colors for existing and newly created memos.
+
 ## 1.2.6
 
 - Split text color and paper color into separate toolbar controls.

@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="쪼꼼 인덱스"
-VERSION="1.2.6"
+VERSION="1.2.7"
 APP="$ROOT/dist/$APP_NAME.app"
 MACOS="$APP/Contents/MacOS"
 RESOURCES="$APP/Contents/Resources"

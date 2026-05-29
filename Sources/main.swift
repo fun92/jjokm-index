@@ -60,9 +60,9 @@ final class MemoStore {
             memos = decoded
         } else {
             memos = [
-                Memo(title: "메모", text: "모니터 오른쪽에 쪼꼼 숨어 있다가\n\n필요할 때 톡 열리는 쪼꼼 인덱스입니다.", fontSize: 16, backgroundHex: nil),
-                Memo(title: "할 일", text: "", fontSize: 16, backgroundHex: nil),
-                Memo(title: "링크", text: "", fontSize: 16, backgroundHex: nil)
+                Memo(title: "메모", text: "모니터 오른쪽에 쪼꼼 숨어 있다가\n\n필요할 때 톡 열리는 쪼꼼 인덱스입니다.", fontSize: 16, backgroundHex: Self.defaultBackgroundHex(index: 0)),
+                Memo(title: "할 일", text: "", fontSize: 16, backgroundHex: Self.defaultBackgroundHex(index: 1)),
+                Memo(title: "링크", text: "", fontSize: 16, backgroundHex: Self.defaultBackgroundHex(index: 2))
             ]
         }
 
@@ -70,6 +70,10 @@ final class MemoStore {
         for index in memos.indices {
             if memos[index].fontSize == nil || (memos[index].fontSize ?? 16) > 18 {
                 memos[index].fontSize = 16
+                changed = true
+            }
+            if memos[index].backgroundHex == nil {
+                memos[index].backgroundHex = Self.defaultBackgroundHex(index: index)
                 changed = true
             }
         }
@@ -90,7 +94,7 @@ final class MemoStore {
     }
 
     func addMemo() -> Int {
-        memos.append(Memo(title: "새 메모", text: "", fontSize: 16, backgroundHex: nil))
+        memos.append(Memo(title: "새 메모", text: "", fontSize: 16, backgroundHex: Self.defaultBackgroundHex(index: memos.count)))
         save()
         return memos.count - 1
     }
@@ -110,7 +114,7 @@ final class MemoStore {
     func deleteMemo(index: Int) -> Int {
         guard memos.indices.contains(index) else { return 0 }
         if memos.count == 1 {
-            memos[0] = Memo(title: "메모", text: "", fontSize: 16, backgroundHex: nil)
+            memos[0] = Memo(title: "메모", text: "", fontSize: 16, backgroundHex: Self.defaultBackgroundHex(index: 0))
             save()
             return 0
         }
@@ -123,6 +127,11 @@ final class MemoStore {
     private func save() {
         guard let data = try? JSONEncoder().encode(memos) else { return }
         try? data.write(to: url, options: .atomic)
+    }
+
+    static func defaultBackgroundHex(index: Int) -> String {
+        let colors = ["#FFF279", "#C7E6FF", "#C7F5D1", "#FFE0AD"]
+        return colors[index % colors.count]
     }
 }
 
@@ -1011,10 +1020,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         }
 
         let colors = [
-            NSColor(red: 1.0, green: 0.95, blue: 0.47, alpha: 1.0),
-            NSColor(red: 0.78, green: 0.90, blue: 1.0, alpha: 1.0),
-            NSColor(red: 0.78, green: 0.96, blue: 0.82, alpha: 1.0),
-            NSColor(red: 1.0, green: 0.88, blue: 0.68, alpha: 1.0)
+            color(fromHex: MemoStore.defaultBackgroundHex(index: 0))!,
+            color(fromHex: MemoStore.defaultBackgroundHex(index: 1))!,
+            color(fromHex: MemoStore.defaultBackgroundHex(index: 2))!,
+            color(fromHex: MemoStore.defaultBackgroundHex(index: 3))!
         ]
         return colors[index % colors.count]
     }
