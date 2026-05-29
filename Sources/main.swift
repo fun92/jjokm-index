@@ -47,6 +47,18 @@ final class BubbleButton: NSButton {
     }
 }
 
+final class MemoTabButton: NSButton {
+    var onDoubleClick: (() -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount >= 2 {
+            onDoubleClick?()
+            return
+        }
+        super.mouseDown(with: event)
+    }
+}
+
 final class MemoStore {
     private let url: URL
     private(set) var memos: [Memo]
@@ -411,8 +423,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         }
         tabWidthConstraints = []
         tabButtons = store.memos.enumerated().map { index, memo in
-            let button = NSButton(title: memo.title, target: self, action: #selector(tabClicked(_:)))
+            let button = MemoTabButton(title: memo.title, target: self, action: #selector(tabClicked(_:)))
             button.tag = index
+            button.toolTip = "더블클릭해서 이름 변경"
+            button.onDoubleClick = { [weak self] in
+                self?.renameMemo(at: index)
+            }
             button.isBordered = false
             button.font = .systemFont(ofSize: 11, weight: .semibold)
             button.contentTintColor = .black
@@ -544,6 +560,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         store.updateTitle(index: selectedIndex, title: titleField.stringValue)
         renderTabs()
         showStatus("제목 저장")
+    }
+
+    private func renameMemo(at index: Int) {
+        guard store.memos.indices.contains(index) else { return }
+        selectMemo(index)
+
+        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
+        input.stringValue = store.memos[index].title
+        input.selectText(nil)
+
+        let alert = NSAlert()
+        alert.messageText = "메모 이름 바꾸기"
+        alert.informativeText = "탭에 표시할 이름을 입력하세요."
+        alert.accessoryView = input
+        alert.addButton(withTitle: "저장")
+        alert.addButton(withTitle: "취소")
+
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+
+        store.updateTitle(index: index, title: input.stringValue)
+        renderTabs()
+        selectMemo(index)
+        showStatus("이름 저장")
     }
 
     func textDidChange(_ notification: Notification) {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.11
+
+- Added memo tab renaming by double-clicking a tab.
+
 ## 1.2.10
 
 - Replaced the paper color picker with a fixed color-swatch menu to prevent accidental resets.
