@@ -166,6 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         startHoverReveal()
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
             self?.justLaunched = false
+            self?.updateBubbleVisibility(animated: true)
         }
     }
 
@@ -627,7 +628,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let screen = panel.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let nearEdge = side == "right" ? mouse.x >= screen.maxX - 90 : mouse.x <= screen.minX + 90
         let nearBubbleY = mouse.y >= frame.minY - 80 && mouse.y <= frame.maxY + 80
-        let targetAlpha: CGFloat = nearEdge && nearBubbleY ? 1.0 : 0.22
+        let targetAlpha: CGFloat = nearEdge && nearBubbleY ? 1.0 : 0.0
 
         guard abs(root.alphaValue - targetAlpha) > 0.02 else { return }
 
