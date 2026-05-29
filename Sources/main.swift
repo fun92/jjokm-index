@@ -157,6 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private var textScroll: NSScrollView!
     private var textView: NSTextView!
     private var selectedTextColor = NSColor(red: 0.13, green: 0.11, blue: 0.08, alpha: 1)
+    private var usesAutomaticTextColor = true
     private var tabButtons: [NSButton] = []
     private var tabWidthConstraints: [NSLayoutConstraint] = []
     private var hoverTimer: Timer?
@@ -296,12 +297,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         paper.addSubview(toolbarDock)
 
         let toolbarItems: [(String, Selector, CGFloat)] = [
-            ("B", #selector(bold), 32),
-            ("I", #selector(italic), 32),
-            ("U", #selector(underline), 32),
-            ("•", #selector(bullet), 32),
-            ("🎨", #selector(colorPaper), 34),
-            ("Aa", #selector(toggleSizeSlider), 38)
+            ("B", #selector(bold), 30),
+            ("I", #selector(italic), 30),
+            ("U", #selector(underline), 30),
+            ("•", #selector(bullet), 30),
+            ("A", #selector(colorText), 30),
+            ("🎨", #selector(colorPaper), 32),
+            ("Aa", #selector(toggleSizeSlider), 34)
         ]
         var toolbarX: CGFloat = 42
         for item in toolbarItems {
@@ -310,13 +312,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
                 fontSize = 13
             } else if item.0 == "Aa" {
                 fontSize = 13
+            } else if item.0 == "A" {
+                fontSize = 14
             } else {
                 fontSize = 14
             }
             let button = softButton(item.0, action: item.1, fontSize: fontSize)
             button.frame = NSRect(x: toolbarX, y: 20, width: item.2, height: 25)
             paper.addSubview(button)
-            toolbarX += item.2 + 5
+            toolbarX += item.2 + 4
         }
 
         sizeLabel = NSTextField(labelWithString: "24")
@@ -346,10 +350,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         versionLabel.alignment = .center
         versionLabel.font = .systemFont(ofSize: 9, weight: .bold)
         versionLabel.textColor = NSColor.black.withAlphaComponent(0.45)
-        versionLabel.frame = NSRect(x: openWidth - 144, y: 23, width: 130, height: 20)
-        versionLabel.wantsLayer = true
-        versionLabel.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.22).cgColor
-        versionLabel.layer?.cornerRadius = 10
+        versionLabel.frame = NSRect(x: openWidth - 126, y: 25, width: 108, height: 16)
         paper.addSubview(versionLabel)
 
         textScroll = NSScrollView(frame: NSRect(x: 36, y: 62, width: openWidth - 72, height: panelHeight - 134))
@@ -411,6 +412,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         selectedIndex = index
         titleField.stringValue = store.memos[index].title
         textView.string = store.memos[index].text
+        usesAutomaticTextColor = true
         applyMemoFontSize(store.memos[index].effectiveFontSize)
         updatePaperColor(animated: false)
         refreshSelectedTab()
@@ -761,7 +763,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         panel.setAction(#selector(applySelectedColor(_:)))
         panel.color = selectedTextColor
         panel.makeKeyAndOrderFront(nil)
-        showStatus("색 선택")
+        showStatus("글자색")
     }
 
     @objc private func colorPaper() {
@@ -777,12 +779,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let color = sender.color.usingColorSpace(.sRGB) ?? sender.color
         store.updateBackground(index: selectedIndex, hex: hexString(for: color))
         updatePaperColor(animated: true)
-        applyReadableTextColor()
         refreshSelectedTab()
     }
 
     @objc private func applySelectedColor(_ sender: NSColorPanel) {
         selectedTextColor = sender.color
+        usesAutomaticTextColor = false
         let range = textView.selectedRange()
         if range.length == 0 {
             textView.typingAttributes[.foregroundColor] = selectedTextColor
@@ -827,7 +829,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     private func applyMemoFontSize(_ size: CGFloat) {
         let font = NSFont.systemFont(ofSize: size, weight: .regular)
-        let textColor = readableTextColor(for: paperBackgroundColor(for: selectedIndex))
+        let textColor = currentTextColor()
         textView.font = font
         textView.textColor = textColor
         textView.insertionPointColor = textColor
@@ -968,7 +970,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let color = paperBackgroundColor(for: selectedIndex).withAlphaComponent(0.96)
         let apply = { [weak self] in
             self?.paper.layer?.backgroundColor = color.cgColor
-            self?.applyReadableTextColor()
+            if self?.usesAutomaticTextColor == true {
+                self?.applyReadableTextColor()
+            }
         }
 
         if animated {
@@ -983,7 +987,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     private func applyReadableTextColor() {
         guard textView != nil else { return }
-        let textColor = readableTextColor(for: paperBackgroundColor(for: selectedIndex))
+        let textColor = currentTextColor()
         textView.textColor = textColor
         textView.insertionPointColor = textColor
         textView.typingAttributes[.foregroundColor] = textColor
@@ -991,6 +995,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             let range = NSRange(location: 0, length: (textView.string as NSString).length)
             textStorage.addAttribute(.foregroundColor, value: textColor, range: range)
         }
+    }
+
+    private func currentTextColor() -> NSColor {
+        usesAutomaticTextColor ? readableTextColor(for: paperBackgroundColor(for: selectedIndex)) : selectedTextColor
     }
 
     private func paperBackgroundColor(for index: Int) -> NSColor {

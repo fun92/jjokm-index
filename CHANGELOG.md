@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.6
+
+- Split text color and paper color into separate toolbar controls.
+- Removed the extra rounded badge behind the app/version label.
+
 ## 1.2.5
 
 - Added automatic readable text contrast for custom paper colors.
