@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2
+
+- Refined the app icon colors with a mint tab and yellow heart.
+
 ## 1.2.1
 
 - Added a custom macOS app icon.

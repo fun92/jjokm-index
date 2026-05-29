@@ -113,13 +113,13 @@ func makeIcon(size: CGFloat) -> NSImage {
     NSShadow().with {
         $0.shadowOffset = NSSize(width: 0, height: -r(10))
         $0.shadowBlurRadius = r(22)
-        $0.shadowColor = color(102, 62, 84, 0.22)
+        $0.shadowColor = color(58, 106, 108, 0.22)
     }.set()
-    color(255, 205, 226).setFill()
+    color(174, 226, 224).setFill()
     tab.fill()
     NSShadow().set()
 
-    color(253, 246, 196).setFill()
+    color(255, 238, 92).setFill()
     drawHeart(in: CGRect(x: r(642), y: r(284), width: r(108), height: r(104)))
 
     image.unlockFocus()
