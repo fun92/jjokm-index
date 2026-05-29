@@ -22,6 +22,8 @@
 3. `쪼꼼 인덱스.app`을 Applications 폴더로 옮깁니다.
 4. 처음 실행할 때 macOS 경고가 보이면 앱을 우클릭한 뒤 `열기`를 선택합니다.
 
+압축을 iCloud Drive에서 풀었다면 앱을 그 자리에서 실행하지 말고 Applications 폴더로 옮긴 뒤 실행하세요.
+
 ## 알려진 제한
 
 - 현재 배포 파일은 Apple Developer ID 공증 전입니다.

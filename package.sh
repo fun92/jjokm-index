@@ -28,6 +28,11 @@ cat > "$RELEASE_DIR/README-설치.txt" <<TXT
 2. "쪼꼼 인덱스.app"을 Applications 폴더로 옮깁니다.
 3. 처음 실행 시 macOS 경고가 보이면 앱을 우클릭한 뒤 "열기"를 선택합니다.
 
+주의:
+iCloud Drive 안에서 앱을 바로 실행하지 마세요.
+압축을 iCloud 폴더에서 풀었다면 "쪼꼼 인덱스.app"을 Applications 폴더로 먼저 옮긴 뒤 실행하세요.
+동기화 중에는 앱이 안 열리거나 "쪼꼼 인덱스 2" 같은 중복 항목이 생길 수 있습니다.
+
 로그인 시 자동으로 열기:
 install-login-item.sh 실행
 
