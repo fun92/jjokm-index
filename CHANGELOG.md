@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.5
+
+- Added automatic readable text contrast for custom paper colors.
+- Hid the font-size number until the size slider is open.
+- Made the note scrollbar appear only when needed.
+- Tidied the bottom app/version label into a small rounded pill.
+
 ## 1.2.4
 
 - Removed the large title from the panel to give notes more room.

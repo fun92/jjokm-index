@@ -324,6 +324,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         sizeLabel.font = .monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
         sizeLabel.textColor = NSColor.black.withAlphaComponent(0.55)
         sizeLabel.frame = NSRect(x: toolbarX + 3, y: 25, width: 24, height: 16)
+        sizeLabel.isHidden = true
         paper.addSubview(sizeLabel)
 
         sizeSlider = NSSlider(value: 16, minValue: 11, maxValue: 26, target: self, action: #selector(fontSizeSliderChanged(_:)))
@@ -342,15 +343,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         paper.addSubview(statusLabel)
 
         versionLabel = NSTextField(labelWithString: "쪼꼼 인덱스 v1.2")
-        versionLabel.alignment = .right
+        versionLabel.alignment = .center
         versionLabel.font = .systemFont(ofSize: 9, weight: .bold)
         versionLabel.textColor = NSColor.black.withAlphaComponent(0.45)
-        versionLabel.frame = NSRect(x: openWidth - 132, y: 25, width: 120, height: 16)
+        versionLabel.frame = NSRect(x: openWidth - 144, y: 23, width: 130, height: 20)
+        versionLabel.wantsLayer = true
+        versionLabel.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.22).cgColor
+        versionLabel.layer?.cornerRadius = 10
         paper.addSubview(versionLabel)
 
         textScroll = NSScrollView(frame: NSRect(x: 36, y: 62, width: openWidth - 72, height: panelHeight - 134))
         textScroll.drawsBackground = false
         textScroll.hasVerticalScroller = true
+        textScroll.autohidesScrollers = true
+        textScroll.scrollerStyle = .overlay
         textScroll.borderType = .noBorder
 
         textView = NSTextView(frame: textScroll.bounds)
@@ -771,6 +777,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let color = sender.color.usingColorSpace(.sRGB) ?? sender.color
         store.updateBackground(index: selectedIndex, hex: hexString(for: color))
         updatePaperColor(animated: true)
+        applyReadableTextColor()
         refreshSelectedTab()
     }
 
@@ -797,6 +804,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     @objc private func toggleSizeSlider() {
         sizeSlider.doubleValue = Double(store.memos[selectedIndex].effectiveFontSize)
         sizeSlider.isHidden.toggle()
+        sizeLabel.isHidden = sizeSlider.isHidden
         if !sizeSlider.isHidden {
             showStatus("")
         }
@@ -819,14 +827,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     private func applyMemoFontSize(_ size: CGFloat) {
         let font = NSFont.systemFont(ofSize: size, weight: .regular)
+        let textColor = readableTextColor(for: paperBackgroundColor(for: selectedIndex))
         textView.font = font
+        textView.textColor = textColor
+        textView.insertionPointColor = textColor
         textView.typingAttributes[.font] = font
+        textView.typingAttributes[.foregroundColor] = textColor
         if let textStorage = textView.textStorage {
             let range = NSRange(location: 0, length: (textView.string as NSString).length)
             textStorage.beginEditing()
             textStorage.addAttributes([
                 .font: font,
-                .foregroundColor: NSColor(red: 0.13, green: 0.11, blue: 0.08, alpha: 1)
+                .foregroundColor: textColor
             ], range: range)
             textStorage.endEditing()
         }
@@ -956,6 +968,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let color = paperBackgroundColor(for: selectedIndex).withAlphaComponent(0.96)
         let apply = { [weak self] in
             self?.paper.layer?.backgroundColor = color.cgColor
+            self?.applyReadableTextColor()
         }
 
         if animated {
@@ -965,6 +978,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
             }
         } else {
             apply()
+        }
+    }
+
+    private func applyReadableTextColor() {
+        guard textView != nil else { return }
+        let textColor = readableTextColor(for: paperBackgroundColor(for: selectedIndex))
+        textView.textColor = textColor
+        textView.insertionPointColor = textColor
+        textView.typingAttributes[.foregroundColor] = textColor
+        if let textStorage = textView.textStorage {
+            let range = NSRange(location: 0, length: (textView.string as NSString).length)
+            textStorage.addAttribute(.foregroundColor, value: textColor, range: range)
         }
     }
 
@@ -1001,6 +1026,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         let green = CGFloat((value >> 8) & 0xFF) / 255
         let blue = CGFloat(value & 0xFF) / 255
         return NSColor(red: red, green: green, blue: blue, alpha: 1)
+    }
+
+    private func readableTextColor(for background: NSColor) -> NSColor {
+        let rgb = background.usingColorSpace(.sRGB) ?? background
+        let luminance = (0.299 * rgb.redComponent) + (0.587 * rgb.greenComponent) + (0.114 * rgb.blueComponent)
+        if luminance < 0.48 {
+            return NSColor.white.withAlphaComponent(0.92)
+        }
+        return NSColor(red: 0.13, green: 0.11, blue: 0.08, alpha: 1)
     }
 }
 
