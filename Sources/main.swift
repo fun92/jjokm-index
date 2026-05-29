@@ -47,7 +47,7 @@ final class MemoStore {
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let folder = appSupport.appendingPathComponent("JjokmIndex", isDirectory: true)
+        let folder = appSupport.appendingPathComponent("JjokkomIndex", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         url = folder.appendingPathComponent("memos.json")
 

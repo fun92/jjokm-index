@@ -6,7 +6,7 @@ APP_NAME="쪼꼼 인덱스"
 VERSION="1.1.0"
 APP="$ROOT/dist/$APP_NAME.app"
 RELEASE_DIR="$ROOT/release"
-ZIP="$RELEASE_DIR/jjokm-index-$VERSION.zip"
+ZIP="$RELEASE_DIR/jjokkom-index-$VERSION.zip"
 
 "$ROOT/build.sh" >/dev/null
 
@@ -26,7 +26,7 @@ cat > "$RELEASE_DIR/README-설치.txt" <<TXT
 3. 처음 실행 시 macOS 경고가 보이면 앱을 우클릭한 뒤 "열기"를 선택합니다.
 
 메모 데이터 위치:
-~/Library/Application Support/JjokmIndex/memos.json
+~/Library/Application Support/JjokkomIndex/memos.json
 TXT
 
 echo "$ZIP"

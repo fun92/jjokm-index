@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleExecutable</key>
-  <string>JjokmIndex</string>
+  <string>JjokkomIndex</string>
   <key>CFBundleIdentifier</key>
-  <string>app.jjokm.index</string>
+  <string>app.jjokkom.index</string>
   <key>CFBundleName</key>
   <string>쪼꼼 인덱스</string>
   <key>CFBundleDisplayName</key>
