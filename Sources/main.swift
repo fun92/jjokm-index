@@ -11,6 +11,11 @@ struct Memo: Codable {
     }
 }
 
+enum ColorEditMode {
+    case text
+    case paper
+}
+
 final class EdgePanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
@@ -76,6 +81,10 @@ final class MemoStore {
                 memos[index].backgroundHex = Self.defaultBackgroundHex(index: index)
                 changed = true
             }
+            if let hex = memos[index].backgroundHex, Self.isAccidentalWhite(hex) {
+                memos[index].backgroundHex = Self.defaultBackgroundHex(index: index)
+                changed = true
+            }
         }
         if changed { save() }
     }
@@ -133,6 +142,11 @@ final class MemoStore {
         let colors = ["#FFF279", "#C7E6FF", "#C7F5D1", "#FFE0AD"]
         return colors[index % colors.count]
     }
+
+    static func isAccidentalWhite(_ hex: String) -> Bool {
+        let cleaned = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#")).uppercased()
+        return cleaned == "FFFFFF" || cleaned == "FEFEFE" || cleaned == "FDFDFD"
+    }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
@@ -167,6 +181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private var textView: NSTextView!
     private var selectedTextColor = NSColor(red: 0.13, green: 0.11, blue: 0.08, alpha: 1)
     private var usesAutomaticTextColor = true
+    private var colorEditMode: ColorEditMode?
     private var tabButtons: [NSButton] = []
     private var tabWidthConstraints: [NSLayoutConstraint] = []
     private var hoverTimer: Timer?
@@ -767,32 +782,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     }
 
     @objc private func colorText() {
+        colorEditMode = .text
         let panel = NSColorPanel.shared
         panel.setTarget(self)
-        panel.setAction(#selector(applySelectedColor(_:)))
+        panel.setAction(#selector(applyPanelColor(_:)))
         panel.color = selectedTextColor
         panel.makeKeyAndOrderFront(nil)
         showStatus("글자색")
     }
 
     @objc private func colorPaper() {
+        colorEditMode = .paper
         let panel = NSColorPanel.shared
         panel.setTarget(self)
-        panel.setAction(#selector(applyPaperColor(_:)))
+        panel.setAction(#selector(applyPanelColor(_:)))
         panel.color = paperBackgroundColor(for: selectedIndex)
         panel.makeKeyAndOrderFront(nil)
         showStatus("바탕색")
     }
 
-    @objc private func applyPaperColor(_ sender: NSColorPanel) {
-        let color = sender.color.usingColorSpace(.sRGB) ?? sender.color
+    @objc private func applyPanelColor(_ sender: NSColorPanel) {
+        switch colorEditMode {
+        case .text:
+            applySelectedColor(sender.color)
+        case .paper:
+            applyPaperColor(sender.color)
+        case nil:
+            break
+        }
+    }
+
+    private func applyPaperColor(_ selectedColor: NSColor) {
+        let color = selectedColor.usingColorSpace(.sRGB) ?? selectedColor
         store.updateBackground(index: selectedIndex, hex: hexString(for: color))
         updatePaperColor(animated: true)
         refreshSelectedTab()
     }
 
-    @objc private func applySelectedColor(_ sender: NSColorPanel) {
-        selectedTextColor = sender.color
+    private func applySelectedColor(_ selectedColor: NSColor) {
+        selectedTextColor = selectedColor
         usesAutomaticTextColor = false
         let range = textView.selectedRange()
         if range.length == 0 {

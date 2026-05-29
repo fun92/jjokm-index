@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.8
+
+- Isolated the shared macOS color panel modes for text and paper colors.
+- Restored accidentally saved pure-white paper colors to default memo colors.
+
 ## 1.2.7
 
 - Fixed new memos sometimes appearing with a white paper background.
