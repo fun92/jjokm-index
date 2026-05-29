@@ -139,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     private var panel: EdgePanel!
     private var root: NSView!
     private var paper: NSView!
+    private var closeButton: NSButton!
     private var tabStack: NSStackView!
     private var bubbleButton: BubbleButton!
     private var titleField: NSTextField!
@@ -239,14 +240,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         paper.wantsLayer = true
         paper.layer?.backgroundColor = NSColor(red: 1.0, green: 0.95, blue: 0.47, alpha: 0.96).cgColor
         paper.layer?.cornerRadius = 14
-        paper.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
+        paper.layer?.maskedCorners = [
+            .layerMinXMinYCorner,
+            .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner,
+            .layerMaxXMaxYCorner
+        ]
         paper.layer?.shadowColor = NSColor.black.cgColor
         paper.layer?.shadowOpacity = 0.13
         paper.layer?.shadowRadius = 16
         paper.layer?.shadowOffset = NSSize(width: -4, height: -2)
         root.addSubview(paper)
 
-        let closeButton = plainButton("›", action: #selector(togglePanel), fontSize: 22)
+        closeButton = plainButton(collapseSymbol(), action: #selector(togglePanel), fontSize: 22)
         closeButton.frame = NSRect(x: 18, y: panelHeight - 35, width: 24, height: 26)
         paper.addSubview(closeButton)
 
@@ -460,6 +466,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     @objc private func toggleSide() {
         side = side == "right" ? "left" : "right"
         UserDefaults.standard.set(side, forKey: "edgeSide")
+        closeButton.title = collapseSymbol()
         resize(to: isOpen ? openWidth : closedWidth, animated: true)
         updateStatusMenuItems()
     }
@@ -532,6 +539,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     }
 
     private func layoutContent(for width: CGFloat, height: CGFloat) {
+        closeButton?.title = collapseSymbol()
         if isOpen {
             paper.isHidden = false
             tabStack.isHidden = false
@@ -597,6 +605,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
     private func windowX(width: CGFloat, screen: NSRect) -> CGFloat {
         side == "right" ? screen.maxX - width - 8 : screen.minX + 8
+    }
+
+    private func collapseSymbol() -> String {
+        side == "right" ? "›" : "‹"
     }
 
     private func updateStatusMenuItems() {
