@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.12
+
+- Removed the redundant fold item from the menu bar menu.
+- Changed pinning to keep the memo unfolded until pinning is turned off.
+
 ## 1.2.11
 
 - Added memo tab renaming by double-clicking a tab.

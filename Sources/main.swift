@@ -205,7 +205,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
         buildStatusItem()
         renderTabs()
         selectMemo(0)
-        close(animated: false)
+        if isPinned {
+            open()
+        } else {
+            close(animated: false)
+        }
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         startHoverReveal()
@@ -223,7 +227,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
 
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "쪼꼼 열기", action: #selector(openFromMenu), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "접기", action: #selector(closeFromMenu), keyEquivalent: ""))
         pinMenuItem = NSMenuItem(title: "", action: #selector(togglePin), keyEquivalent: "")
         menu.addItem(pinMenuItem)
         sideMenuItem = NSMenuItem(title: "", action: #selector(toggleSide), keyEquivalent: "")
@@ -496,6 +499,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     }
 
     @objc private func togglePanel() {
+        if isPinned && isOpen {
+            showStatus("고정됨")
+            return
+        }
         isOpen ? close(animated: true) : open()
     }
 
@@ -600,6 +607,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     }
 
     private func close(animated: Bool) {
+        guard !isPinned else {
+            open()
+            showStatus("고정됨")
+            return
+        }
         isOpen = false
         if animated {
             closeWithoutMovingLauncher()
@@ -744,7 +756,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextViewDelegate {
     }
 
     private func updateStatusMenuItems() {
-        pinMenuItem?.title = isPinned ? "메모 고정 끄기" : "메모 고정 켜기"
+        pinMenuItem?.title = isPinned ? "펼친 상태 고정 끄기" : "펼친 상태 고정 켜기"
         sideMenuItem?.title = side == "right" ? "왼쪽으로 이동" : "오른쪽으로 이동"
         loginItemMenuItem?.title = isLoginItemEnabled() ? "로그인 시 자동 열기 끄기" : "로그인 시 자동 열기 켜기"
     }
